@@ -1,3 +1,17 @@
+# Python
 __pycache__/
+*.py[cod]
+*.pyo
+
+# Virtualenv
 venv/
 .venv/
+
+# VSCode settings (если используешь)
+.vscode/
+
+# SQLite
+*.db
+
+# Env/Config
+.env
