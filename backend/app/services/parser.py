@@ -1,26 +1,17 @@
 import httpx
 import asyncio
 from bs4 import BeautifulSoup
-# COOKIES = {
-#     "SCookieGUID": "30C54E2D%2D24CE%2D4076%2D9E6E%2D4CE48D57122E",
-#     "SUserID": "611277066",
-#     "__utma": "216042306.1731073576.1742873088.1744694199.1744696613.10",
-#     "__utmz": "216042306.1744186469.4.3.utmcsr=elibrary.ru|utmccn=(referral)|utmcmd=referral|utmcct=/",
-#     "_ym_d": "1742873071",
-#     "_ym_isad": "1",
-#     "_ym_uid": "1742873071940753857"
-# }
+
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 YaBrowser/25.2.0.0 Safari/537.36",
-    "Referer": "https://elibrary.ru/querybox.asp?scope=newquery",
-    "Origin": "https://elibrary.ru",
+    "Referer": "https://www.elibrary.ru/defaultx.asp",
+    "Origin": "https://www.elibrary.ru",
     "Content-Type": "application/x-www-form-urlencoded"
 }
 async def login_to_elibrary(client, login: str, password: str, cookies) -> httpx.AsyncClient:
     url = "https://elibrary.ru/start_session.asp"
 
     payload = {
-        "rpage": "https://elibrary.ru/defaultx.asp",
         "login": login,
         "password": password
     }
