@@ -87,89 +87,57 @@ async def parse_by_doi(doi: str = Query(..., description="DOI статьи"), se
         } if journal_info else None,
     }
 
-@router.post("/parse-local-article")
-async def parse_local_article(session: AsyncSession = Depends(get_session)):
-    with open("article.html", "r", encoding="utf-8") as f:
-        soup = BeautifulSoup(f.read(), "html.parser")
+from app.services.parser import fetch_article_info_from_doi
 
-    # Извлечение данных
-    title = soup.title.string.strip()
+@router.post("/parse-by-doi-online")
+async def parse_by_doi_online(doi: str = Query(...), session: AsyncSession = Depends(get_session)):
+    data = await fetch_article_info_from_doi(doi)
+    if not data:
+        raise HTTPException(status_code=404, detail="Статья не найдена на eLibrary")
 
-    doi_tag = soup.find("meta", {"name": "doi"})
-    doi = doi_tag["content"] if doi_tag else None
-
-    abstract_block = soup.find("div", id="abstract1")
-    abstract = abstract_block.get_text(strip=True) if abstract_block else ""
-
-    keywords_block = soup.find(text=re.compile("КЛЮЧЕВЫЕ СЛОВА", re.I))
-    if keywords_block:
-        keyword_links = keywords_block.find_parent("table").find_all("a")
-        keywords = [kw.get_text(strip=True) for kw in keyword_links]
-    else:
-        keywords = []
-
-    journal_block = soup.find("a", href=re.compile("contents\.asp\?id="))
-    journal_title = journal_block.get_text(strip=True) if journal_block else "Unknown Journal"
-
-    year_match = re.search(r"Год:\s*([\d]{4})", soup.text)
-    year = int(year_match.group(1)) if year_match else None
-
-    volume = None  # Не найдено в статье
-    number_match = re.search(r"Номер:\s*([\dA-Z]+)", soup.text)
-    number = number_match.group(1) if number_match else None
-
-    pages_match = re.search(r"Страницы:\s*([\d\-–]+)", soup.text)
-    pages = pages_match.group(1) if pages_match else ""
-
-    authors_raw = soup.find_all("span", class_="help pointer")
-    authors = []
-    for a in authors_raw:
-        full = a.get_text(strip=True).replace(u'\xa0', ' ')
-        initials = full.split()
-        if len(initials) >= 2:
-            lastname = initials[0].title()
-            name = initials[1].replace(".", "").upper()
-            authors.append({
-                "lastname": lastname,
-                "name": name,
-                "patronymic": None,
-                "affiliation": "Unknown",
-                "ORCID": None,
-            })
-
-    # Сохранение данных
-    journal = Journal(title=journal_title)
+    journal = Journal(title=data["journal"])
     session.add(journal)
     await session.flush()
 
-    issue = JournalIssue(journal_id=journal.id, year=year, WoS=False,
-                         Quartile_WoS=0, Scopus=False, Quartile_Scopus=0,
-                         WhiteList=False, Quartile_WL=0, RINC_core=False)
+    issue = JournalIssue(
+        journal_id=journal.id,
+        year=data["year"],
+        WoS=False,
+        Quartile_WoS=0,
+        Scopus=False,
+        Quartile_Scopus=0,
+        WhiteList=False,
+        Quartile_WL=0,
+        RINC_core=False
+    )
     session.add(issue)
     await session.flush()
 
     author_objs = []
-    for a in authors:
-        author = Author(**a)
+    for full in data["authors"]:
+        parts = full.split()
+        lastname = parts[0].title()
+        name = parts[1][0] if len(parts) > 1 else "X"
+        author = Author(lastname=lastname, name=name, patronymic=None, affiliation="Unknown", ORCID=None)
         session.add(author)
         await session.flush()
         author_objs.append(author)
 
     publication = Publication(
-        title=title,
-        doi=doi,
-        abstract=abstract,
-        keywords=",".join(keywords),
-        year=year,
-        volume=volume,
-        number=number,
-        pages=pages,
+        title=data["title"],
+        doi=data["doi"],
+        abstract="",
+        keywords="",
+        year=data["year"],
+        volume=None,
+        number=data["number"],
+        pages=data["pages"],
         journal_id=journal.id,
         issue_id=issue.id,
         authors=author_objs
     )
-
     session.add(publication)
+
     try:
         await session.commit()
     except IntegrityError:
@@ -177,3 +145,36 @@ async def parse_local_article(session: AsyncSession = Depends(get_session)):
         raise HTTPException(status_code=400, detail="Публикация уже существует")
 
     return {"detail": "Публикация успешно добавлена"}
+
+@router.get("/parse-lite")
+async def parse_lite_by_doi(
+    doi: str = Query(..., description="DOI статьи"),
+    session: AsyncSession = Depends(get_session)
+):
+    result = await session.execute(
+        select(Publication)
+        .options(
+            selectinload(Publication.authors),
+            selectinload(Publication.journal)
+        )
+        .where(Publication.doi == doi)
+    )
+    publication = result.scalars().first()
+
+    if not publication:
+        raise HTTPException(status_code=404, detail="DOI не найден")
+
+    return {
+        "title": publication.title,
+        "authors": [
+            f"{a.lastname} {a.name[0]}." for a in publication.authors if a.name
+        ],
+        "doi": publication.doi,
+        "keywords": publication.keywords.split(",") if publication.keywords else [],
+        "abstract": publication.abstract,
+        "year": publication.year,
+        "volume": publication.volume,
+        "number": publication.number,
+        "pages": publication.pages,
+    }
+
