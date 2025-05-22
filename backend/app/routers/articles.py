@@ -165,16 +165,55 @@ async def parse_lite_by_doi(
         raise HTTPException(status_code=404, detail="DOI не найден")
 
     return {
-        "title": publication.title,
-        "authors": [
-            f"{a.lastname} {a.name[0]}." for a in publication.authors if a.name
-        ],
-        "doi": publication.doi,
-        "keywords": publication.keywords.split(",") if publication.keywords else [],
-        "abstract": publication.abstract,
-        "year": publication.year,
-        "volume": publication.volume,
-        "number": publication.number,
-        "pages": publication.pages,
+        "publication": {
+            "title": publication.title,
+            "doi": publication.doi,
+            "authors": [
+                f"{a.lastname} {a.name[0]}." for a in publication.authors if a.name
+            ],
+            "journal": publication.journal.title if publication.journal else None,
+            "year": publication.year,
+        }
     }
+from sqlalchemy import or_
+from fastapi.responses import JSONResponse
 
+@router.get("/publications")
+async def list_publications(
+    page: int = Query(1, ge=1),
+    per_page: int = Query(10, ge=1, le=100),
+    query: str = Query("", description="Поиск по DOI, названию, автору, журналу"),
+    session: AsyncSession = Depends(get_session)
+):
+    offset = (page - 1) * per_page
+
+    stmt = (
+        select(Publication)
+        .options(selectinload(Publication.authors), selectinload(Publication.journal))
+        .offset(offset)
+        .limit(per_page)
+    )
+
+    if query:
+        stmt = stmt.where(
+            or_(
+                Publication.doi.ilike(f"%{query}%"),
+                Publication.title.ilike(f"%{query}%"),
+                Publication.journal.has(Journal.title.ilike(f"%{query}%")),
+                Publication.authors.any(Author.lastname.ilike(f"%{query}%")),
+            )
+        )
+
+    result = await session.execute(stmt)
+    publications = result.scalars().all()
+
+    return JSONResponse([
+        {
+            "title": pub.title,
+            "doi": pub.doi,
+            "authors": [f"{a.lastname} {a.name[0]}." for a in pub.authors],
+            "journal": pub.journal.title if pub.journal else None,
+            "year": pub.year,
+        }
+        for pub in publications
+    ])
