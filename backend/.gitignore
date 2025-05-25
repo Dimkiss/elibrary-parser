@@ -11,7 +11,7 @@ venv/
 .vscode/
 
 # SQLite
-*.db
+# *.db
 
 # Env/Config
 .env

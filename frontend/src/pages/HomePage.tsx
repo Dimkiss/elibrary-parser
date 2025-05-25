@@ -1,10 +1,11 @@
 import DoiInput from "../features/DoiInput/ui/DoiInput";
 import ArticleList from "../features/ArticleList/ui/ArticleList";
+import styles from "../styles.module.css";
 
 const HomePage = () => (
-  <div style={{ padding: "2rem", fontFamily: "Arial, sans-serif" }}>
-    <DoiInput />
+  <div className={styles.container}>
     <ArticleList />
+    <DoiInput />
   </div>
 );
 

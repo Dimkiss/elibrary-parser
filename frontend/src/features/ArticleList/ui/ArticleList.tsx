@@ -6,7 +6,7 @@ const ArticleList = () => {
 
   return (
     <>
-      <h2>Публикации</h2>
+      <h1>Публикации</h1>
       <input
         placeholder="Поиск по DOI, автору, названию..."
         value={search}
@@ -30,13 +30,25 @@ const ArticleList = () => {
           </li>
         ))}
       </ul>
-      <div>
-        <button onClick={() => setPage((p) => Math.max(p - 1, 1))}>
-          ← Назад
-        </button>
-        <span className={styles.pagination}>Стр. {page}</span>
-        <button onClick={() => setPage((p) => p + 1)}>Вперёд →</button>
-      </div>
+      {articles.length >= 10 && (
+        <div>
+          <button
+            onClick={() => setPage((p) => Math.max(p - 1, 1))}
+            className={styles.button}
+          >
+            ← Назад
+          </button>
+
+          <span className={styles.pagination}>Стр. {page}</span>
+
+          <button
+            onClick={() => setPage((p) => p + 1)}
+            className={styles.button}
+          >
+            Вперёд →
+          </button>
+        </div>
+      )}
     </>
   );
 };

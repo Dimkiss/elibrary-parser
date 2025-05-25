@@ -1,39 +1,77 @@
 .container {
+  max-width: 800px;
+  margin: 0 auto;
   padding: 2rem;
+  text-align: center;
   font-family: Arial, sans-serif;
+  background-color: #f9f9f9;
+  color: #333;
 }
 
 .heading {
-  font-size: 1.5rem;
-  margin-bottom: 1rem;
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
 }
 
 .inputRow {
-  margin-bottom: 1rem;
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
 }
 
 .input {
   padding: 0.5rem;
   width: 300px;
-  margin-right: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #fff;
+  color: #333;
 }
 
 .button {
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 1.2rem;
+  border: none;
+  background-color: #a8a8a8;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.button:hover {
+  background-color: #8e8e8e;
 }
 
 .error {
-  color: red;
+  color: #b00020;
 }
 
 .success {
-  color: green;
+  color: #2e7d32;
 }
 
 .articleItem {
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  text-align: left;
+  padding: 1rem;
+  background-color: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
 }
 
 .pagination {
-  margin: 0 1rem;
+  margin: 1.5rem;
+}
+.paginationContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
 }

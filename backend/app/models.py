@@ -2,7 +2,6 @@ from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Table, Text
 from sqlalchemy.orm import relationship
 from app.db import Base
 
-# many-to-many между публикациями и авторами
 publication_author = Table(
     "publication_author",
     Base.metadata,
