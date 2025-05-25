@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
-import { Publication } from "../../../entities/publication";
+import { Publication } from "../../../publication";
 
 export const useArticleStore = () => {
   const [articles, setArticles] = useState<Publication[]>([]);
